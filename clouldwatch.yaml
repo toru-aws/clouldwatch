@@ -301,7 +301,7 @@ Resources:
   MyWebACLAssociation:
     Type: AWS::WAFv2::WebACLAssociation
     Properties:
-      ResourceArn: !GetAtt MyALB.Arn # ここは紐付けたいALBのARN
+      ResourceArn: !GetAtt MyALB.LoadBalancerArn # ここは紐付けたいALBのARN
       WebACLArn: !GetAtt MyWebACL.Arn
 
   # CloudWatch Logs Group (WAFログ用)
@@ -313,8 +313,46 @@ Resources:
 
   # WAF LoggingConfiguration
   WAFLoggingConfig:
+    DependsOn: MyWebACL
     Type: AWS::WAFv2::LoggingConfiguration
     Properties:
       ResourceArn: !GetAtt MyWebACL.Arn
       LogDestinationConfigs:
-        - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/waf/MyWebACL
+        - !GetAtt MyWAFLogGroup.Arn
+      RoleArn: !GetAtt MyWAFLoggingRole.Arn
+      LoggingFilter:
+      DefaultBehavior: DROP
+      Filters:
+        - Behavior: KEEP
+          Requirement: MEETS_ANY
+          Conditions:
+        - ActionCondition:
+            Action: BLOCK
+        - ActionCondition:
+            Action: COUNT
+
+  # WAF Logging 用 IAM ロール
+  MyWAFLoggingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: WAFLoggingRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: waf.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: WAFLoggingToCloudWatch
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource: "*"
