@@ -308,34 +308,32 @@ Resources:
   MyWAFLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: aws-waf-logs-
+      LogGroupName: !Sub "aws-waf-logs-${AWS::StackName}"
       RetentionInDays: 7
 
   # WAF LoggingConfiguration
   WAFLoggingConfig:
-    DependsOn: MyWebACL
     Type: AWS::WAFv2::LoggingConfiguration
     Properties:
       ResourceArn: !GetAtt MyWebACL.Arn
       LogDestinationConfigs:
         - !GetAtt MyWAFLogGroup.Arn
-      RoleArn: !GetAtt MyWAFLoggingRole.Arn
       LoggingFilter:
-      DefaultBehavior: DROP
-      Filters:
-        - Behavior: KEEP
-          Requirement: MEETS_ANY
-          Conditions:
-        - ActionCondition:
-            Action: BLOCK
-        - ActionCondition:
-            Action: COUNT
+        DefaultBehavior: DROP
+        Filters:
+          - Behavior: KEEP
+            Requirement: MEETS_ANY
+            Conditions:
+              - ActionCondition:
+                  Action: BLOCK
+              - ActionCondition:
+                  Action: COUNT
 
   # WAF Logging 用 IAM ロール
   MyWAFLoggingRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: WAFLoggingRole
+      RoleName: !Sub "WAFLoggingRole-${AWS::StackName}"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
