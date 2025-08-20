@@ -308,7 +308,7 @@ Resources:
   MyWAFLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /aws/waf/MyWebACL
+      LogGroupName: aws-waf-logs-
       RetentionInDays: 7
 
   # WAF LoggingConfiguration
