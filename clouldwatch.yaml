@@ -265,7 +265,7 @@ Resources:
       Endpoint: 29oishi4@gmail.com  #自分のメルアド追加
       TopicArn: !Ref MySNSTopic
 
-  # CloudWatch アラーム (CPU使用率 1%以上)
+  # CloudWatch アラーム (CPU使用率 0.1%以上で設定する)
   CPUAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -275,14 +275,13 @@ Resources:
       Statistic: Average
       Period: 300
       EvaluationPeriods: 1
-      Threshold: 1
+      Threshold: 0.1
       ComparisonOperator: GreaterThanThreshold
       AlarmActions:
         - !Ref MySNSTopic
       Dimensions:
         - Name: InstanceId
           Value: !Ref MyEC2Instance
-
 
   # WAF WebACL
   MyWebACL:
@@ -302,7 +301,7 @@ Resources:
   MyWebACLAssociation:
     Type: AWS::WAFv2::WebACLAssociation
     Properties:
-      ResourceArn: !Ref MyALB       # ここに紐付けたい ALB の ARN
+      ResourceArn: !GetAtt MyALB.Arn # ここは紐付けたいALBのARN
       WebACLArn: !GetAtt MyWebACL.Arn
 
   # CloudWatch Logs Group (WAFログ用)
@@ -316,6 +315,6 @@ Resources:
   WAFLoggingConfig:
     Type: AWS::WAFv2::LoggingConfiguration
     Properties:
-      ResourceArn: !Ref MyWebACL
+      ResourceArn: !GetAtt MyWebACL.Arn
       LogDestinationConfigs:
-        - !GetAtt MyWAFLogGroup.Arn
+        - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/waf/MyWebACL
